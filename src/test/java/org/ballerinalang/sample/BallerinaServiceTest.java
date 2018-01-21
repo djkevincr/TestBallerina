@@ -22,22 +22,11 @@ import org.ballerinalang.containers.docker.BallerinaDockerClient;
 import org.ballerinalang.containers.docker.exception.BallerinaDockerClientException;
 import org.ballerinalang.containers.docker.impl.DefaultBallerinaDockerClient;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.shaded.org.apache.http.HttpResponse;
-import org.testcontainers.shaded.org.apache.http.client.HttpClient;
-import org.testcontainers.shaded.org.apache.http.client.methods.HttpGet;
-import org.testcontainers.shaded.org.apache.http.impl.client.DefaultHttpClient;
 import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -46,9 +35,9 @@ import java.time.Duration;
 /**
  * Sample case to test Ballerina Service inside Dockerized environment.
  */
-public class TestBallerina {
+public class BallerinaServiceTest {
 
-    private static BallerinaDockerClient dockerClient;
+    private BallerinaDockerClient dockerClient;
     private static final String IMAGE_NAME = "helloworld";
     private static final String IMAGE_VERSION = "latest";
     private static final String DOCKER_CONTAINER_NAME = IMAGE_NAME + ":" + IMAGE_VERSION;
@@ -56,49 +45,30 @@ public class TestBallerina {
     private static final int SERVICE_STARTUP_TIMEOUT = 60;
     private static final String BALLERINA_VERSION = "0.95.6";
     private String url = "http://localhost:{port}/hello";
-    public static GenericContainer ballerinaService;
+    public GenericContainer ballerinaService;
 
-    @BeforeClass
-    public static void setup() throws BallerinaDockerClientException, IOException, InterruptedException {
+    @Before
+    public void setup() throws BallerinaDockerClientException, IOException, InterruptedException {
         System.setProperty("ballerina.version", BALLERINA_VERSION);
-        dockerClient = new DefaultBallerinaDockerClient();
-        Path servicePath = Paths.get(TestBallerina.class.getClassLoader().getResource("helloWorldService.bal").getPath());
+        this.dockerClient = new DefaultBallerinaDockerClient();
+        Path servicePath = Paths.get(BallerinaServiceTest.class.getClassLoader()
+                .getResource("helloWorldService.bal").getPath());
         String createdImageName = dockerClient.createMainImage("TestPackage", null, servicePath,
                 IMAGE_NAME, IMAGE_VERSION);
         assert createdImageName != null;
-        ballerinaService = new GenericContainer(DOCKER_CONTAINER_NAME)
+        this.ballerinaService = new GenericContainer(DOCKER_CONTAINER_NAME)
                 .withExposedPorts(SERVICE_PORT)
                 .waitingFor(new ServiceStartupLogWaitStrategy())
                 .withStartupTimeout(Duration.ofSeconds(SERVICE_STARTUP_TIMEOUT));
-
+        this.ballerinaService.start();
     }
 
 
     @Test
-    public void testApp() throws InterruptedException {
+    public void testApp() {
         String invocationURL = this.url.replace("{port}",
-                this.ballerinaService.getMappedPort(SERVICE_PORT).toString());
-        Assert.assertEquals(sendGet(invocationURL), "Hello, World!");
-    }
-
-    private String sendGet(String url) {
-
-        HttpClient client = new DefaultHttpClient();
-        HttpGet request = new HttpGet(url);
-        StringBuffer result = new StringBuffer();
-        try {
-            HttpResponse response = client.execute(request);
-
-            BufferedReader rd = new BufferedReader(
-                    new InputStreamReader(response.getEntity().getContent()));
-            String line = "";
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-        } catch (IOException ex) {
-            //Ignore
-        }
-        return result.toString();
+                ballerinaService.getMappedPort(SERVICE_PORT).toString());
+        Assert.assertEquals(HTTPUtil.sendGet(invocationURL), "Hello, World!");
     }
 
 }
