@@ -22,10 +22,10 @@ import org.ballerinalang.containers.docker.BallerinaDockerClient;
 import org.ballerinalang.containers.docker.exception.BallerinaDockerClientException;
 import org.ballerinalang.containers.docker.impl.DefaultBallerinaDockerClient;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
-import org.testng.Assert;
 
 import java.io.IOException;
 import java.nio.file.Paths;
