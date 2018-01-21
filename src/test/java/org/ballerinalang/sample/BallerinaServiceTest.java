@@ -65,7 +65,7 @@ public class BallerinaServiceTest {
 
 
     @Test
-    public void testApp() {
+    public void testService() {
         String invocationURL = this.url.replace("{port}",
                 ballerinaService.getMappedPort(SERVICE_PORT).toString());
         Assert.assertEquals(HTTPUtil.sendGet(invocationURL), "Hello, World!");
