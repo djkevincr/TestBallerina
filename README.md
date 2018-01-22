@@ -10,5 +10,5 @@ mvn clean install
 ```
 
 ## License
-Ballerina Container Support is licensed under [Apache License v2](LICENSE).
+Sample is licensed under [Apache License v2](LICENSE).
 
